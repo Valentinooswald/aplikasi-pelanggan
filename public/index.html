@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Data Pelanggan</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #2c3e50;
+      color: white;
+    }
+
+    input, button {
+      padding: 6px;
+      margin: 5px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .aksi button {
+      margin: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>DATA PELANGGAN</h2>
+
+<input type="text" id="search" placeholder="Search...">
+<button onclick="loadData()">Refresh</button>
+
+<br><br>
+
+<input type="file" id="file">
+<button onclick="uploadExcel()">Upload Excel</button>
+
+<hr>
+
+<h3>Tambah Data Baru</h3>
+
+<input type="text" id="idpel" placeholder="IDPEL">
+<input type="text" id="nama" placeholder="Nama">
+<input type="text" id="tarif" placeholder="Tarif">
+<input type="text" id="daya" placeholder="Daya">
+<input type="text" id="no_bindex" placeholder="No Bindex">
+<input type="text" id="area" placeholder="Area">
+
+<button onclick="tambahData()">Simpan Data</button>
+
+<hr>
+
+<button onclick="window.location.href='/export/excel'">
+  Export Excel
+</button>
+
+<button onclick="window.location.href='/export/pdf'">
+  Export PDF
+</button>
+
+<div id="tableContainer"></div>
+
+<script>
+
+function loadData() {
+  fetch('/data')
+    .then(res => res.json())
+    .then(data => {
+
+      let html = `
+        <table>
+          <tr>
+            <th>NO</th>
+            <th>IDPEL</th>
+            <th>NAMA</th>
+            <th>TARIF</th>
+            <th>DAYA</th>
+            <th>NO BINDEX</th>
+            <th>AREA</th>
+            <th>AKSI</th>
+          </tr>
+      `;
+
+      const keyword = document.getElementById("search").value.toLowerCase();
+      let no = 1;
+
+      data.forEach(row => {
+
+        if (
+          row.nama.toLowerCase().includes(keyword) ||
+          row.idpel.includes(keyword) ||
+          row.area.toLowerCase().includes(keyword)
+        ) {
+
+          html += `
+            <tr>
+              <td>${no++}</td>
+              <td>${row.idpel}</td>
+              <td>${row.nama}</td>
+              <td>${row.tarif}</td>
+              <td>${row.daya}</td>
+              <td>${row.no_bindex}</td>
+              <td>${row.area}</td>
+              <td class="aksi">
+                <button onclick="editData(${row.id}, '${row.idpel}', '${row.nama}', '${row.tarif}', '${row.daya}', '${row.no_bindex}', '${row.area}')">Edit</button>
+                <button onclick="hapusData(${row.id})">Hapus</button>
+              </td>
+            </tr>
+          `;
+        }
+
+      });
+
+      html += `</table>`;
+      document.getElementById("tableContainer").innerHTML = html;
+    });
+}
+
+function hapusData(id) {
+  if (confirm("Yakin hapus?")) {
+    fetch('/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id })
+    })
+    .then(res => res.text())
+    .then(() => loadData());
+  }
+}
+
+function editData(id, idpel, nama, tarif, daya, no_bindex, area) {
+
+  const newIdpel = prompt("IDPEL:", idpel);
+  const newNama = prompt("Nama:", nama);
+  const newTarif = prompt("Tarif:", tarif);
+  const newDaya = prompt("Daya:", daya);
+  const newNoBindex = prompt("No Bindex:", no_bindex);
+  const newArea = prompt("Area:", area);
+
+  if (newNama !== null) {
+    fetch('/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: id,
+        idpel: newIdpel,
+        nama: newNama,
+        tarif: newTarif,
+        daya: newDaya,
+        no_bindex: newNoBindex,
+        area: newArea
+      })
+    })
+    .then(res => res.text())
+    .then(() => loadData());
+  }
+}
+
+function uploadExcel() {
+  const file = document.getElementById('file').files[0];
+
+  if (!file) {
+    alert("Pilih file dulu!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/upload', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.text())
+  .then(result => {
+    alert(result); // 🔥 tampilkan response asli dari server
+    loadData();
+  })
+  .catch(err => {
+    alert("Terjadi kesalahan saat upload");
+    console.error(err);
+  });
+}
+
+
+function tambahData() {
+  fetch('/tambah', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      idpel: document.getElementById('idpel').value,
+      nama: document.getElementById('nama').value,
+      tarif: document.getElementById('tarif').value,
+      daya: document.getElementById('daya').value,
+      no_bindex: document.getElementById('no_bindex').value,
+      area: document.getElementById('area').value
+    })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    alert(msg);
+    loadData();
+
+    document.getElementById('idpel').value = "";
+    document.getElementById('nama').value = "";
+    document.getElementById('tarif').value = "";
+    document.getElementById('daya').value = "";
+    document.getElementById('no_bindex').value = "";
+    document.getElementById('area').value = "";
+  });
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>

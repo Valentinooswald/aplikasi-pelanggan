@@ -1,0 +1,75 @@
+const express = require('express');
+const mysql = require('mysql2');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const fs = require('fs');
+const PDFDocument = require('pdfkit');
+
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/* ================= DATABASE ================= */
+const db = mysql.createConnection({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT
+});
+
+/* ================= READ ================= */
+app.get('/data', (req, res) => {
+  db.query(
+    "SELECT * FROM pelanggan ORDER BY area, id",
+    (err, result) => {
+      if (err) return res.status(500).send("Database error");
+      res.json(result);
+    }
+  );
+});
+
+/* ================= SEARCH ================= */
+app.get('/search', (req, res) => {
+  const keyword = `%${req.query.keyword}%`;
+
+  db.query(
+    `SELECT * FROM pelanggan 
+     WHERE idpel LIKE ? OR nama LIKE ? OR area LIKE ?
+     ORDER BY area`,
+    [keyword, keyword, keyword],
+    (err, result) => {
+      if (err) return res.status(500).send("Database error");
+      res.json(result);
+    }
+  );
+});
+
+/* ================= TAMBAH ================= */
+app.post('/tambah', (req, res) => {
+  const { idpel, nama, tarif, daya, no_bindex, area } = req.body;
+
+  const sql = `
+    INSERT INTO pelanggan (idpel, nama, tarif, daya, no_bindex, area)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [idpel, nama, tarif, daya, no_bindex, area], (err) => {
+    if (err) return res.status(500).send("Gagal tambah data");
+    res.send("Berhasil tambah data");
+  });
+});
+
+/* ================= DELETE ================= */
+app.post('/delete', (req, res) => {
+  db.query("DELETE FROM pelanggan WHERE id=?", [req.body.id], err => {
+    if (err) return res.send("Gagal");
+    res.send("OK");
+  });
+});
+
+module.exports = app;
+app.get("/", (req, res) => {
+  res.send("API jalan 🚀");
+});

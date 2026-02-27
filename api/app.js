@@ -11,12 +11,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ================= DATABASE ================= */
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
   database: process.env.MYSQLDATABASE,
-  port: process.env.MYSQLPORT
+  port: process.env.MYSQLPORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  connectTimeout: 10000
 });
 
 /* ROOT TEST */

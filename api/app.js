@@ -22,24 +22,34 @@ const db = mysql.createPool({
   connectTimeout: 10000
 });
 
-/* ROOT TEST */
+/* ================= TEST ROUTES ================= */
 app.get("/", (req, res) => {
   res.send("API jalan 🚀");
 });
 
+app.get("/api", (req, res) => {
+  res.send("API READY 🔥");
+});
+
 /* ================= READ ================= */
-app.get('/data', (req, res) => {
+app.get('/api/data', (req, res) => {
+
   db.query(
     "SELECT * FROM pelanggan ORDER BY area, id",
     (err, result) => {
-      if (err) return res.status(500).send("Database error");
+      if (err) {
+        console.log("DB ERROR:", err);
+        return res.status(500).send("Database error");
+      }
       res.json(result);
     }
   );
+
 });
 
 /* ================= SEARCH ================= */
-app.get('/search', (req, res) => {
+app.get('/api/search', (req, res) => {
+
   const keyword = `%${req.query.keyword}%`;
 
   db.query(
@@ -48,14 +58,19 @@ app.get('/search', (req, res) => {
      ORDER BY area`,
     [keyword, keyword, keyword],
     (err, result) => {
-      if (err) return res.status(500).send("Database error");
+      if (err) {
+        console.log("DB ERROR:", err);
+        return res.status(500).send("Database error");
+      }
       res.json(result);
     }
   );
+
 });
 
 /* ================= TAMBAH ================= */
-app.post('/tambah', (req, res) => {
+app.post('/api/tambah', (req, res) => {
+
   const { idpel, nama, tarif, daya, no_bindex, area } = req.body;
 
   const sql = `
@@ -64,17 +79,26 @@ app.post('/tambah', (req, res) => {
   `;
 
   db.query(sql, [idpel, nama, tarif, daya, no_bindex, area], (err) => {
-    if (err) return res.status(500).send("Gagal tambah data");
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.status(500).send("Gagal tambah data");
+    }
     res.send("Berhasil tambah data");
   });
+
 });
 
 /* ================= DELETE ================= */
-app.post('/delete', (req, res) => {
+app.post('/api/delete', (req, res) => {
+
   db.query("DELETE FROM pelanggan WHERE id=?", [req.body.id], err => {
-    if (err) return res.send("Gagal");
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.send("Gagal");
+    }
     res.send("OK");
   });
+
 });
 
 module.exports = app;

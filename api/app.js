@@ -19,6 +19,11 @@ const db = mysql.createConnection({
   port: process.env.MYSQLPORT
 });
 
+/* ROOT TEST */
+app.get("/", (req, res) => {
+  res.send("API jalan 🚀");
+});
+
 /* ================= READ ================= */
 app.get('/data', (req, res) => {
   db.query(
@@ -70,6 +75,3 @@ app.post('/delete', (req, res) => {
 });
 
 module.exports = app;
-app.get("/", (req, res) => {
-  res.send("API jalan 🚀");
-});
